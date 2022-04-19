@@ -1,0 +1,15 @@
+# IDE configure file
+.idea
+
+# IDE generated file
+.cache
+
+# build file
+bin
+pkg
+bdist
+*.aar
+*.jar
+
+# OS tmp file
+.DS_Store
