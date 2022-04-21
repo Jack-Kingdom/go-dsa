@@ -14,6 +14,8 @@ var (
 	defaultAllocatorOnce sync.Once
 )
 
+// Allocator is a memory allocator.
+// 每次分配的内存都满足 2 的幂，计算最为接近的内存大小，保证浪费的空间不超过 50%
 type Allocator struct {
 	maxSize int
 	shiftLimit int
