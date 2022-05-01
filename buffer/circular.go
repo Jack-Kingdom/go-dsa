@@ -23,10 +23,10 @@ type CircularBuffer struct {
 	mu     sync.Mutex
 }
 
-func NewCircularBuffer(size int) *CircularBuffer {
+func NewCircularBuffer(buf []byte) *CircularBuffer {
 	return &CircularBuffer{
-		size: size,
-		buf:  Get(size),
+		size: len(buf),
+		buf:  buf,
 	}
 }
 
@@ -88,10 +88,4 @@ func (circular *CircularBuffer) Write(data []byte) (n int, err error) {
 
 	circular.length += n
 	return n, nil
-}
-
-// Close recycle buffer.
-func (circular *CircularBuffer) Close() error {
-	Put(circular.buf)
-	return nil
 }

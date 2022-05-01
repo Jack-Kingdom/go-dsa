@@ -3,7 +3,10 @@ package buffer
 import "testing"
 
 func TestCircularBuffer_Write(t *testing.T) {
-	circularBuffer := NewCircularBuffer(20)
+	buf := Get(20)
+	defer Put(buf)
+
+	circularBuffer := NewCircularBuffer(buf)
 
 	content := []byte("Hello World")
 
