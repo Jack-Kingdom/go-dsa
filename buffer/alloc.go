@@ -58,7 +58,7 @@ func (allocator *Allocator) Get(size int) []byte {
 	}
 
 	for i := 0; i < allocator.shiftLimit; i++ {
-		if (1 << i) > size {
+		if (1 << i) >= size {
 			return allocator.pools[i].Get().([]byte)[:]
 		}
 	}
