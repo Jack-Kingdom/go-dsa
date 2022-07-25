@@ -1,62 +1,71 @@
 package io
 
 import (
+	"context"
 	"io"
 	"sync"
 	"testing"
+	"time"
 )
 
 const (
-	bufferLength   = 8 * 1024           // buffer 长度
-	transferLength = 1024 * 1024 * 1024 // GB, 每次测试传输的数据长度
+	bufferLength = 8 * 1024 // buffer 长度
+	Mb           = 1024 * 1024
+)
+
+var (
+	mutex sync.Mutex
 )
 
 func BenchmarkMemoryConnType(b *testing.B) {
-
-	testReader := func(wg *sync.WaitGroup, conn io.ReadWriteCloser) {
-		defer wg.Done()
-
+	testReader := func(ctx context.Context, conn io.ReadWriteCloser) {
 		buffer := make([]byte, bufferLength)
 		hasRead := 0
 		for {
-			if hasRead >= transferLength {
-				break
+			select {
+			case <-ctx.Done():
+				mutex.Lock()
+				b.ReportMetric(float64(hasRead)/Mb, "MB")
+				mutex.Unlock()
+				return
+			default:
+				n, err := conn.Read(buffer[:bufferLength])
+				if err != nil {
+					b.Errorf("read error: %s", err)
+				}
+				hasRead += n
 			}
-
-			n, err := conn.Read(buffer[:bufferLength])
-			if err != nil {
-				b.Errorf("read error: %s", err)
-			}
-			hasRead += n
 		}
 	}
 
-	testWriter := func(wg *sync.WaitGroup, conn io.ReadWriteCloser) {
-		defer wg.Done()
-
+	testWriter := func(ctx context.Context, conn io.ReadWriteCloser) {
 		buffer := make([]byte, bufferLength)
 		hasWrite := 0
 		for {
-			if hasWrite >= transferLength {
-				break
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				n, err := conn.Write(buffer[:bufferLength])
+				if err != nil {
+					b.Errorf("read error: %s", err)
+				}
+				hasWrite += n
 			}
-
-			n, err := conn.Write(buffer[:bufferLength])
-			if err != nil {
-				b.Errorf("read error: %s", err)
-			}
-			hasWrite += n
 		}
 	}
 
 	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+
 		client, server := NewMemoryConnPeer()
-		wg := &sync.WaitGroup{}
-		wg.Add(4)
-		go testReader(wg, client)
-		go testWriter(wg, server)
-		go testReader(wg, server)
-		go testWriter(wg, client)
-		wg.Wait()
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		go testReader(ctx, client)
+		go testWriter(ctx, server)
+		go testReader(ctx, server)
+		go testWriter(ctx, client)
+
+		time.Sleep(1 * time.Second)
+		cancel()
 	}
 }
