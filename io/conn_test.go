@@ -2,7 +2,7 @@ package io
 
 import (
 	"context"
-	"io"
+	stdio "io"
 	"sync"
 	"testing"
 	"time"
@@ -18,7 +18,7 @@ var (
 )
 
 func BenchmarkMemoryConnType(b *testing.B) {
-	testReader := func(ctx context.Context, conn io.ReadWriteCloser) {
+	testReader := func(ctx context.Context, conn stdio.ReadWriteCloser) {
 		buffer := make([]byte, bufferLength)
 		hasRead := 0
 		for {
@@ -38,7 +38,7 @@ func BenchmarkMemoryConnType(b *testing.B) {
 		}
 	}
 
-	testWriter := func(ctx context.Context, conn io.ReadWriteCloser) {
+	testWriter := func(ctx context.Context, conn stdio.ReadWriteCloser) {
 		buffer := make([]byte, bufferLength)
 		hasWrite := 0
 		for {
